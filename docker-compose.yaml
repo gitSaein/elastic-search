@@ -1,0 +1,117 @@
+version: '3.8'
+
+services:
+  es01:
+    container_name: es01
+    image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
+    ports:
+     - ${ES1_1_PORT}:9200
+     - ${ES1_2_PORT}:9300
+    networks:
+     - elastic
+    volumes:
+     - /usr/share/data/elasticsearch:/usr/share/elasticsearch/data
+    environment:
+     - node.name=es01
+#     - discovery.type=single-node #single node로 만든다.
+     - discovery.seed_hosts=es02,es03
+     - cluster.name=${CLUSTER_NAME}  
+     - cluster.initial_master_nodes=es01,es02,es03
+     - bootstrap.memory_lock=true   
+     - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+     - xpack.security.enable=false
+     - xpack.security.http.ssl.enable=false
+     - xpack.security.http.ssl.verification_mode=certificate
+     - xpack.security.transport.ssl.enable=false
+     - xpack.security.transport.ssl.verification_mode=certificate
+     - xpack.license.self_generated.type=basic
+     - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+     - TZ=Asia/Seoul
+    ulimits:  #프로세스 자원 한도 설정 soft: 기본 적용 값, hard: soft에서 최대로 늘릴 한)
+      memlock:
+        soft: -1
+        hard: -1
+    mem_limit: ${ES_MEM_LIMIT}
+  es02:
+    container_name: es02
+    image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
+    ports:
+     - ${ES2_1_PORT}:9300
+    networks:
+     - elastic
+    volumes:
+     - /usr/share/data/elasticsearch:/usr/share/elasticsearch/data
+    environment:
+     - node.name=es01
+#     - discovery.type=single-node #single node로 만든다.
+     - discovery.seed_hosts=es01,es03
+     - cluster.name=${CLUSTER_NAME}  
+     - cluster.initial_master_nodes=es01,es02,es03
+     - bootstrap.memory_lock=true   
+     - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+     - xpack.security.enable=false
+     - xpack.security.http.ssl.enable=false
+     - xpack.security.http.ssl.verification_mode=certificate
+     - xpack.security.transport.ssl.enable=false
+     - xpack.security.transport.ssl.verification_mode=certificate
+     - xpack.license.self_generated.type=basic
+     - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+     - TZ=Asia/Seoul
+    ulimits:  #프로세스 자원 한도 설정 soft: 기본 적용 값, hard: soft에서 최대로 늘릴 한)
+      memlock:
+        soft: -1
+        hard: -1
+    mem_limit: ${ES_MEM_LIMIT}
+  es03:
+    container_name: es03
+    image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
+    ports:
+     - ${ES3_1_PORT}:9300
+    networks:
+     - elastic
+    volumes:
+     - /usr/share/data/elasticsearch:/usr/share/elasticsearch/data
+    environment:
+     - node.name=es03
+#     - discovery.type=single-node #single node로 만든다.
+     - discovery.seed_hosts=es01,es02
+     - cluster.name=${CLUSTER_NAME}  
+     - cluster.initial_master_nodes=es01,es02,es03
+     - bootstrap.memory_lock=true   
+     - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+     - xpack.security.enable=false
+     - xpack.security.http.ssl.enable=false
+     - xpack.security.http.ssl.verification_mode=certificate
+     - xpack.security.transport.ssl.enable=false
+     - xpack.security.transport.ssl.verification_mode=certificate
+     - xpack.license.self_generated.type=basic
+     - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+     - TZ=Asia/Seoul
+    ulimits:  #프로세스 자원 한도 설정 soft: 기본 적용 값, hard: soft에서 최대로 늘릴 한)
+      memlock:
+        soft: -1
+        hard: -1
+    mem_limit: ${ES_MEM_LIMIT}
+  kibana:
+    container_name: kibana
+    image: kibana:${KIBANA_VERSION}
+    ports:
+     - ${KIBANA_PORT}:5601
+    networks:
+     - elastic
+    environment:
+     ELASTICSERCH_UTL: http://es01:9200
+     ELASTICSEARCH_HOSTS: http://es01:9200
+    depends_on:
+     - es01
+     - es02
+     - es03
+    environment:
+     - TZ=Asia/Seoul
+    restart: always
+    privileged: true
+
+networks:
+  default:
+    external:
+      name: elastic
